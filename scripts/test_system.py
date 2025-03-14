@@ -7,12 +7,26 @@ import requests
 from datetime import datetime
 import time
 import random
+import mysql.connector
+from dotenv import load_dotenv
 
 # Add parent directory to Python path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from app import create_app, db
 from app.models.honeytoken import Honeytoken, HoneytokenAccess, TokenType, AccessType
+
+# Load environment variables
+load_dotenv()
+
+def get_db_connection():
+    """Create a database connection."""
+    return mysql.connector.connect(
+        host=os.getenv('DB_HOST', 'localhost'),
+        user=os.getenv('DB_USER', 'root'),
+        password=os.getenv('DB_PASSWORD', ''),
+        database=os.getenv('DB_NAME', 'honeytoken_db')
+    )
 
 def test_honeytoken_generation():
     """Test the honeytoken generation system."""
@@ -188,32 +202,115 @@ def cleanup_test_data():
         print(f"Error cleaning up test data: {e}")
         return False
 
+def simulate_unauthorized_access():
+    """Simulate unauthorized access to honeytokens."""
+    print("\n=== Simulating Unauthorized Access ===")
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Get an active honeytoken
+        cursor.execute("""
+            SELECT * FROM honeytokens 
+            WHERE is_active = 1 
+            LIMIT 1
+        """)
+        token = cursor.fetchone()
+        
+        if not token:
+            print("No active honeytokens found")
+            return False
+        
+        # Simulate multiple access attempts
+        print(f"\nSimulating unauthorized access to token {token['id']}")
+        
+        for i in range(5):
+            # Create access log
+            cursor.execute("""
+                INSERT INTO honeytoken_access_logs 
+                (token_id, access_time, user_id, ip_address, access_type, query_text)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (
+                token['id'],
+                datetime.utcnow(),
+                'suspicious_user',
+                '192.168.1.100',
+                'READ',
+                'SELECT * FROM sensitive_data'
+            ))
+            
+            print(f"Created access log {i+1}/5")
+            time.sleep(1)  # Small delay between access attempts
+        
+        conn.commit()
+        print("\nUnauthorized access simulation completed")
+        return True
+        
+    except Exception as e:
+        print(f"Error simulating unauthorized access: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def test_monitoring_system():
+    """Test the monitoring system components."""
+    print("\n=== Testing Monitoring System ===")
+    
+    try:
+        # Test Elasticsearch connection
+        es_response = requests.get('http://localhost:9200/_cluster/health')
+        if es_response.status_code == 200:
+            print("✅ Elasticsearch is running")
+        else:
+            print("❌ Elasticsearch is not responding")
+            return False
+        
+        # Test Kibana connection
+        kibana_response = requests.get('http://localhost:5601/api/status')
+        if kibana_response.status_code == 200:
+            print("✅ Kibana is running")
+        else:
+            print("❌ Kibana is not responding")
+            return False
+        
+        # Test monitoring daemon
+        daemon_status = os.system('systemctl is-active --quiet honeytoken-monitor')
+        if daemon_status == 0:
+            print("✅ Monitoring daemon is running")
+        else:
+            print("❌ Monitoring daemon is not running")
+            return False
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error testing monitoring system: {e}")
+        return False
+
 def main():
-    """Run all system tests."""
-    print("Starting Honeytoken System Tests...")
+    """Run system tests based on command line arguments."""
+    if len(sys.argv) < 2:
+        print("Usage: python test_system.py [scenario]")
+        print("Available scenarios:")
+        print("  - unauthorized_access : Simulate unauthorized access")
+        print("  - monitoring         : Test monitoring system")
+        sys.exit(1)
     
-    tests = [
-        ("Honeytoken Generation", test_honeytoken_generation),
-        ("Access Logging", test_access_logging),
-        ("Monitoring & Alerts", test_monitoring_alerts),
-        ("Web Dashboard", test_web_dashboard)
-    ]
+    scenario = sys.argv[1]
     
-    results = []
+    if scenario == "unauthorized_access":
+        success = simulate_unauthorized_access()
+    elif scenario == "monitoring":
+        success = test_monitoring_system()
+    else:
+        print(f"Unknown scenario: {scenario}")
+        sys.exit(1)
     
-    for test_name, test_func in tests:
-        print(f"\nRunning test: {test_name}")
-        success = test_func()
-        results.append((test_name, success))
-    
-    # Clean up test data
-    cleanup_test_data()
-    
-    # Print summary
-    print("\n=== Test Results Summary ===")
-    for test_name, success in results:
-        status = "✅ PASSED" if success else "❌ FAILED"
-        print(f"{test_name}: {status}")
+    if not success:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main() 

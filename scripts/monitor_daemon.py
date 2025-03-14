@@ -6,6 +6,7 @@ import time
 import schedule
 import smtplib
 import json
+import mysql.connector
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
@@ -20,6 +21,15 @@ from app.models.honeytoken import Honeytoken, HoneytokenAccess, AlertConfig
 
 # Load environment variables
 load_dotenv()
+
+def get_db_connection():
+    """Create a database connection."""
+    return mysql.connector.connect(
+        host=os.getenv('DB_HOST', 'localhost'),
+        user=os.getenv('DB_USER', 'root'),
+        password=os.getenv('DB_PASSWORD', ''),
+        database=os.getenv('DB_NAME', 'honeytoken_db')
+    )
 
 def send_email_alert(subject, body, recipients):
     """Send an email alert using configured SMTP server."""
@@ -60,86 +70,141 @@ def send_slack_alert(webhook_url, message):
         print(f"Error sending Slack alert: {e}")
         return False
 
-def format_alert_message(template, token, access_log):
+def format_alert_message(template, token_data, access_log):
     """Format alert message using template and data."""
     return template.format(
-        token_id=token.id,
-        token_type=token.token_type.value,
-        user_id=access_log.user_id,
-        ip_address=access_log.ip_address,
-        access_time=access_log.access_time.strftime('%Y-%m-%d %H:%M:%S UTC'),
-        query_text=access_log.query_text
+        token_id=token_data['id'],
+        token_type=token_data['token_type'],
+        user_id=access_log['user_id'],
+        ip_address=access_log['ip_address'],
+        access_time=access_log['access_time'].strftime('%Y-%m-%d %H:%M:%S UTC'),
+        query_text=access_log.get('query_text', 'N/A')
     )
 
 def check_alerts():
     """Check for honeytoken access and send alerts."""
     print(f"Checking alerts at {datetime.utcnow()}")
     
-    app = create_app()
-    with app.app_context():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
         # Get all active honeytokens with their alert configs
-        active_tokens = db.session.query(
-            Honeytoken, AlertConfig
-        ).join(
-            AlertConfig
-        ).filter(
-            Honeytoken.is_active == 1
-        ).all()
+        cursor.execute("""
+            SELECT h.*, ac.*
+            FROM honeytokens h
+            JOIN alert_configs ac ON h.id = ac.token_id
+            WHERE h.is_active = 1
+        """)
+        active_tokens = cursor.fetchall()
         
-        for token, config in active_tokens:
+        for token in active_tokens:
             # Get recent access logs
-            recent_logs = HoneytokenAccess.query.filter(
-                HoneytokenAccess.token_id == token.id,
-                HoneytokenAccess.access_time >= datetime.utcnow() - timedelta(seconds=config.cooldown_period)
-            ).all()
+            cursor.execute("""
+                SELECT *
+                FROM honeytoken_access_logs
+                WHERE token_id = %s
+                AND access_time >= %s
+            """, (
+                token['id'],
+                datetime.utcnow() - timedelta(seconds=token['cooldown_period'])
+            ))
+            recent_logs = cursor.fetchall()
             
-            if len(recent_logs) >= config.alert_threshold:
+            if len(recent_logs) >= token['alert_threshold']:
                 # Format and send alerts
                 for access_log in recent_logs:
                     alert_message = format_alert_message(
-                        config.alert_message_template,
+                        token['alert_message_template'],
                         token,
                         access_log
                     )
                     
                     # Send alerts through configured channels
-                    if 'email' in config.alert_channels:
+                    channels = json.loads(token['alert_channels'])
+                    
+                    if 'email' in channels:
                         send_email_alert(
-                            subject=f"Honeytoken Alert - {token.token_type.value} Access Detected",
+                            subject=f"Honeytoken Alert - {token['token_type']} Access Detected",
                             body=alert_message,
                             recipients=[os.getenv('ALERT_RECIPIENTS')]
                         )
                     
-                    if 'slack' in config.alert_channels and os.getenv('SLACK_WEBHOOK_URL'):
+                    if 'slack' in channels and os.getenv('SLACK_WEBHOOK_URL'):
                         send_slack_alert(
                             webhook_url=os.getenv('SLACK_WEBHOOK_URL'),
                             message=alert_message
                         )
+    finally:
+        cursor.close()
+        conn.close()
 
 def cleanup_old_logs():
     """Clean up old access logs to prevent database bloat."""
     print("Cleaning up old access logs...")
     
-    app = create_app()
-    with app.app_context():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
         # Delete logs older than 90 days
         cutoff_date = datetime.utcnow() - timedelta(days=90)
         
-        try:
-            deleted = HoneytokenAccess.query.filter(
-                HoneytokenAccess.access_time < cutoff_date
-            ).delete()
-            
-            db.session.commit()
-            print(f"Deleted {deleted} old access logs")
-            
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error cleaning up old logs: {e}")
+        cursor.execute("""
+            DELETE FROM honeytoken_access_logs
+            WHERE access_time < %s
+        """, (cutoff_date,))
+        
+        conn.commit()
+        print(f"Deleted {cursor.rowcount} old access logs")
+        
+    except Exception as e:
+        conn.rollback()
+        print(f"Error cleaning up old logs: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+def show_active_monitoring():
+    """Display active monitoring status."""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Get active honeytokens
+        cursor.execute("""
+            SELECT h.id, h.token_type, h.is_active,
+                   COUNT(l.id) as access_count,
+                   MAX(l.access_time) as last_access
+            FROM honeytokens h
+            LEFT JOIN honeytoken_access_logs l ON h.id = l.token_id
+            WHERE h.is_active = 1
+            GROUP BY h.id
+        """)
+        active_tokens = cursor.fetchall()
+        
+        print("\nActive Honeytoken Monitoring Status:")
+        print("=" * 80)
+        print(f"{'ID':<5} {'Type':<15} {'Access Count':<15} {'Last Access':<25}")
+        print("-" * 80)
+        
+        for token in active_tokens:
+            last_access = token['last_access'].strftime('%Y-%m-%d %H:%M:%S') if token['last_access'] else 'Never'
+            print(f"{token['id']:<5} {token['token_type']:<15} {token['access_count']:<15} {last_access:<25}")
+        
+        print("=" * 80)
+        
+    finally:
+        cursor.close()
+        conn.close()
 
 def main():
     """Main daemon process."""
     print("Starting honeytoken monitoring daemon...")
+    
+    if len(sys.argv) > 1 and sys.argv[1] == '--show-active':
+        show_active_monitoring()
+        return
     
     # Schedule tasks
     schedule.every(int(os.getenv('HONEYTOKEN_CHECK_INTERVAL', 60))).seconds.do(check_alerts)
