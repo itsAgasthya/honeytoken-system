@@ -69,8 +69,8 @@ graph TB
     AM --> DASH
 
     %% Data Flow Styles
-    classDef primary fill:#f9f,stroke:#333,stroke-width:2px
-    classDef secondary fill:#bbf,stroke:#333,stroke-width:1px
+    classDef primary fill:#4a154b,stroke:#333,stroke-width:2px,color:#ffffff
+    classDef secondary fill:#1a73e8,stroke:#333,stroke-width:1px,color:#ffffff
     class WUI,API,FM primary
     class AUTH,HM,AM secondary
 ```
