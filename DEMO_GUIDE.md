@@ -3,21 +3,73 @@
 ## Prerequisites
 - Python 3.11 or higher
 - MySQL Server
-- Elasticsearch and Kibana
+- Docker and Docker Compose (recommended) or Elasticsearch and Kibana installed locally
 - All dependencies installed from `requirements.txt`
 
-## 1. System Setup (5 minutes)
-```bash
-# Start Elasticsearch and Kibana
-sudo systemctl start elasticsearch
-sudo systemctl start kibana
+## 1. System Setup (10 minutes)
 
-# Verify services are running
-curl http://localhost:9200/_cluster/health
-curl http://localhost:5601/api/status
+### 1.1 Verify Environment
+```bash
+# Check Python version
+python --version  # Should be 3.11 or higher
+
+# Verify MySQL is running
+sudo systemctl status mysql
+mysql -u root -p -e "SELECT VERSION();"
+
+# Check Docker status (if using Docker)
+docker --version
+docker-compose --version
+```
+
+### 1.2 Start ELK Stack
+Option 1 - Using Docker (Recommended):
+```bash
+# Start ELK stack using Docker
+docker-compose up -d elasticsearch kibana
+
+# Wait for services to be ready (usually takes 1-2 minutes)
+docker-compose ps  # Check status
+```
+
+Option 2 - Using System Services:
+```bash
+# Start Elasticsearch
+sudo systemctl start elasticsearch
+# Verify Elasticsearch status
+sudo systemctl status elasticsearch
+# If failed, check logs
+sudo journalctl -xeu elasticsearch.service
+
+# Start Kibana after Elasticsearch is running
+sudo systemctl start kibana
+```
+
+### 1.3 Verify Services
+```bash
+# Test Elasticsearch health
+curl -X GET "localhost:9200/_cluster/health?pretty"
+# Expected output should show status: "green" or "yellow"
+
+# Test Kibana status
+curl -X GET "localhost:5601/api/status"
+# Should return HTTP 200 OK
+```
+
+### 1.4 Initialize Application
+```bash
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Initialize database
+python scripts/init_db.py
 
 # Start the monitoring daemon
-sudo systemctl start honeytoken-monitor
+python scripts/monitor_daemon.py &
 ```
 
 ## 2. Shadow Database Demo (10 minutes)
@@ -105,20 +157,59 @@ Expected output:
 ## Troubleshooting
 
 ### Common Issues
-1. **Elasticsearch Not Responding**
+1. **Elasticsearch Fails to Start**
    ```bash
-   sudo systemctl restart elasticsearch
+   # Check system resources
+   free -h  # Verify available memory
+   df -h    # Check disk space
+   
+   # Verify Elasticsearch configuration
+   sudo nano /etc/elasticsearch/elasticsearch.yml
+   # Ensure these settings:
+   # - Xms512m
+   # - Xmx512m
+   # - network.host: localhost
+   
+   # Try Docker alternative if system service fails
+   docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 \
+     -e "discovery.type=single-node" \
+     docker.elastic.co/elasticsearch/elasticsearch:7.17.14
    ```
 
 2. **Monitor Daemon Issues**
    ```bash
-   sudo systemctl status honeytoken-monitor
-   journalctl -u honeytoken-monitor
+   # Check if process is running
+   ps aux | grep monitor_daemon
+   
+   # View logs
+   tail -f logs/monitor.log
+   
+   # Restart daemon
+   pkill -f monitor_daemon.py
+   python scripts/monitor_daemon.py &
    ```
 
 3. **Database Connection Issues**
    ```bash
-   mysql -u root -p honeytoken_db -e "SELECT 1"
+   # Check MySQL service
+   sudo systemctl status mysql
+   
+   # Verify credentials
+   mysql -u root -p -e "SELECT 1;"
+   
+   # Check database exists
+   mysql -u root -p -e "SHOW DATABASES;"
+   ```
+
+4. **Port Conflicts**
+   ```bash
+   # Check ports in use
+   sudo lsof -i :9200  # Elasticsearch
+   sudo lsof -i :5601  # Kibana
+   sudo lsof -i :3306  # MySQL
+   
+   # Kill conflicting processes if needed
+   sudo kill -9 <PID>
    ```
 
 ### Backup Demo Data
@@ -128,15 +219,35 @@ Keep these ready in case of demo issues:
 - Process analysis data in `logs/process_info.json`
 - Performance metrics in `logs/performance_metrics.json`
 
+### Quick Recovery Steps
+```bash
+# 1. Reset environment
+./scripts/reset_environment.sh
+
+# 2. Load backup data
+./scripts/load_backup_data.sh
+
+# 3. Restart core services
+docker-compose restart  # If using Docker
+# OR
+sudo systemctl restart elasticsearch kibana  # If using system services
+```
+
 ## Post-Demo Cleanup
 ```bash
-# Stop monitoring
-sudo systemctl stop honeytoken-monitor
+# Stop monitoring daemon
+pkill -f monitor_daemon.py
 
 # Clear test data
 python scripts/test_system.py cleanup
 
-# Stop services
+# Stop services (Docker)
+docker-compose down
+
+# OR Stop services (System)
 sudo systemctl stop elasticsearch
 sudo systemctl stop kibana
+
+# Deactivate virtual environment
+deactivate
 ``` 
