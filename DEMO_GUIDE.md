@@ -159,21 +159,53 @@ Expected output:
 ### Common Issues
 1. **Elasticsearch Fails to Start**
    ```bash
-   # Check system resources
+   # 1. Check error details
+   sudo systemctl status elasticsearch.service
+   sudo journalctl -xeu elasticsearch.service
+   
+   # 2. Check system resources and limits
    free -h  # Verify available memory
    df -h    # Check disk space
+   ulimit -a  # Check system limits
    
-   # Verify Elasticsearch configuration
+   # 3. Fix common permission issues
+   sudo chown -R elasticsearch:elasticsearch /var/lib/elasticsearch
+   sudo chown -R elasticsearch:elasticsearch /var/log/elasticsearch
+   sudo chmod 2750 /var/lib/elasticsearch
+   sudo chmod 2750 /var/log/elasticsearch
+   
+   # 4. Verify Elasticsearch configuration
    sudo nano /etc/elasticsearch/elasticsearch.yml
-   # Ensure these settings:
-   # - Xms512m
-   # - Xmx512m
-   # - network.host: localhost
+   # Required settings:
+   # cluster.name: honeytoken-cluster
+   # node.name: node-1
+   # path.data: /var/lib/elasticsearch
+   # path.logs: /var/log/elasticsearch
+   # network.host: localhost
+   # http.port: 9200
+   # discovery.type: single-node
    
-   # Try Docker alternative if system service fails
-   docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 \
+   # 5. Check JVM settings
+   sudo nano /etc/elasticsearch/jvm.options
+   # Ensure these settings:
+   # -Xms512m
+   # -Xmx512m
+   
+   # 6. Try running Elasticsearch manually to see detailed errors
+   sudo -u elasticsearch /usr/share/elasticsearch/bin/elasticsearch
+   
+   # 7. If system service still fails, use Docker alternative
+   docker pull docker.elastic.co/elasticsearch/elasticsearch:7.17.14
+   docker run -d --name elasticsearch \
+     -p 9200:9200 -p 9300:9300 \
      -e "discovery.type=single-node" \
+     -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
+     -v elasticsearch-data:/usr/share/elasticsearch/data \
      docker.elastic.co/elasticsearch/elasticsearch:7.17.14
+   
+   # 8. Verify Docker container is running
+   docker ps | grep elasticsearch
+   docker logs elasticsearch
    ```
 
 2. **Monitor Daemon Issues**
@@ -184,9 +216,12 @@ Expected output:
    # View logs
    tail -f logs/monitor.log
    
-   # Restart daemon
+   # Check Elasticsearch connection from daemon
+   curl -X GET "localhost:9200/_cluster/health?pretty"
+   
+   # Restart daemon with debug logging
    pkill -f monitor_daemon.py
-   python scripts/monitor_daemon.py &
+   python scripts/monitor_daemon.py --debug &
    ```
 
 3. **Database Connection Issues**
@@ -224,13 +259,22 @@ Keep these ready in case of demo issues:
 # 1. Reset environment
 ./scripts/reset_environment.sh
 
-# 2. Load backup data
+# 2. If using system Elasticsearch, try Docker fallback
+if ! systemctl is-active --quiet elasticsearch; then
+    echo "System Elasticsearch failed, switching to Docker..."
+    docker-compose up -d elasticsearch kibana
+fi
+
+# 3. Load backup data
 ./scripts/load_backup_data.sh
 
-# 3. Restart core services
-docker-compose restart  # If using Docker
-# OR
-sudo systemctl restart elasticsearch kibana  # If using system services
+# 4. Verify services
+curl -s localhost:9200/_cluster/health | grep status
+curl -s localhost:5601/api/status | grep status
+
+# 5. Restart monitoring
+pkill -f monitor_daemon.py
+python scripts/monitor_daemon.py &
 ```
 
 ## Post-Demo Cleanup
