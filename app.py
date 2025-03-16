@@ -8,12 +8,26 @@ import hashlib
 import secrets
 from mysql.connector import Error
 import html
+import json
+import logging
+from logging.handlers import SocketHandler
+from elasticsearch import Elasticsearch
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(32))
+
+# Configure logging
+elk_logger = logging.getLogger('elk_logger')
+elk_logger.setLevel(logging.INFO)
+socket_handler = SocketHandler('localhost', 5000)
+socket_handler.setFormatter(logging.Formatter('%(message)s'))
+elk_logger.addHandler(socket_handler)
+
+# Initialize Elasticsearch client
+es = Elasticsearch(['http://localhost:9200'])
 
 # Security Headers
 @app.after_request
@@ -57,16 +71,14 @@ def authenticate():
     )
 
 def get_db_connection():
-    """Create a secure database connection."""
+    """Create a database connection."""
     try:
         return mysql.connector.connect(
             host=os.getenv('DB_HOST', 'localhost'),
             user=os.getenv('DB_USER'),
             password=os.getenv('DB_PASSWORD'),
             database=os.getenv('DB_NAME'),
-            ssl_ca=os.getenv('DB_SSL_CA'),  # SSL certificate for secure connection
-            ssl_verify_cert=True,
-            use_pure=True  # Use pure Python implementation for better security
+            use_pure=True  # Use pure Python implementation
         )
     except Error as e:
         app.logger.error(f"Database connection error: {e}")
@@ -80,6 +92,39 @@ def execute_safe_query(cursor, query, params=None):
     except Error as e:
         app.logger.error(f"Database query error: {e}")
         raise
+
+def log_access_attempt(token_id, user_id, ip_address, access_type, user_agent=None, query_text=None):
+    """Log an access attempt to a honeytoken."""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        query = """
+        INSERT INTO honeytoken_access_logs (
+            token_id, access_time, user_id, ip_address, access_type, 
+            user_agent, query_text
+        ) VALUES (%s, NOW(), %s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (token_id, user_id, ip_address, access_type, user_agent, query_text))
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+def log_to_elk(log_type, data):
+    """Send log data to ELK Stack"""
+    log_entry = {
+        'type': log_type,
+        **data,
+        'timestamp': datetime.utcnow().isoformat()
+    }
+    elk_logger.info(json.dumps(log_entry))
+    
+    # Also store directly in Elasticsearch for immediate access
+    if log_type == 'honeytoken_access':
+        es.index(index=f'honeytoken-access-{datetime.utcnow():%Y.%m.%d}', body=data)
+    elif log_type == 'alert':
+        es.index(index=f'honeytoken-alerts-{datetime.utcnow():%Y.%m.%d}', body=data)
 
 @app.route('/')
 @requires_auth
@@ -121,114 +166,256 @@ def stats():
         cursor.close()
         conn.close()
 
-@app.route('/api/access-logs')
+@app.route('/api/access-logs', methods=['GET'])
+@requires_auth
 def get_access_logs():
-    """Get honeytoken access logs."""
+    try:
+        # Query Elasticsearch for access logs
+        result = es.search(
+            index="honeytoken-access-*",
+            body={
+                "sort": [{"timestamp": {"order": "desc"}}],
+                "size": 100
+            }
+        )
+        return jsonify([hit['_source'] for hit in result['hits']['hits']])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/analytics/access-patterns', methods=['GET'])
+@requires_auth
+def get_access_patterns():
+    try:
+        # Complex Elasticsearch aggregation for access patterns
+        result = es.search(
+            index="honeytoken-access-*",
+            body={
+                "size": 0,
+                "aggs": {
+                    "access_over_time": {
+                        "date_histogram": {
+                            "field": "timestamp",
+                            "calendar_interval": "hour"
+                        }
+                    },
+                    "top_tokens": {
+                        "terms": {
+                            "field": "token_type.keyword",
+                            "size": 10
+                        }
+                    },
+                    "top_ips": {
+                        "terms": {
+                            "field": "ip_address.keyword",
+                            "size": 10
+                        }
+                    },
+                    "access_by_user": {
+                        "terms": {
+                            "field": "user_id.keyword",
+                            "size": 10
+                        }
+                    }
+                }
+            }
+        )
+        return jsonify(result['aggregations'])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/alerts')
+def get_alerts():
+    """Get current alerts."""
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
     try:
         query = """
-        SELECT l.*, h.token_type 
-        FROM honeytoken_access_logs l
-        JOIN honeytokens h ON l.token_id = h.id
-        ORDER BY l.access_time DESC
-        LIMIT 100
+        SELECT 
+            a.id as alert_id,
+            h.token_type,
+            h.description,
+            COUNT(l.id) as access_count,
+            a.alert_threshold,
+            a.alert_channels,
+            MAX(l.access_time) as last_access
+        FROM alert_configs a
+        JOIN honeytokens h ON a.token_id = h.id
+        JOIN honeytoken_access_logs l ON h.id = l.token_id
+        WHERE a.is_active = 1
+        GROUP BY a.id, h.token_type, h.description, a.alert_threshold, a.alert_channels
+        HAVING COUNT(l.id) >= a.alert_threshold
         """
         cursor.execute(query)
-        logs = cursor.fetchall()
-        
-        # Convert datetime objects to string
-        for log in logs:
-            log['access_time'] = log['access_time'].isoformat()
-            log['created_at'] = log['created_at'].isoformat()
-            log['updated_at'] = log['updated_at'].isoformat()
-        
-        return jsonify(logs)
-    finally:
-        cursor.close()
-        conn.close()
-
-@app.route('/api/analytics/access-patterns')
-def get_access_patterns():
-    """Get analytics about honeytoken access patterns."""
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    
-    try:
-        # Get token stats
-        token_query = """
-        SELECT 
-            h.id as token_id,
-            h.token_type,
-            COUNT(l.id) as access_count,
-            COUNT(DISTINCT l.user_id) as unique_users,
-            COUNT(DISTINCT l.ip_address) as unique_ips
-        FROM honeytokens h
-        LEFT JOIN honeytoken_access_logs l ON h.id = l.token_id
-        GROUP BY h.id
-        """
-        cursor.execute(token_query)
-        token_stats = cursor.fetchall()
-        
-        # Get daily stats
-        daily_query = """
-        SELECT 
-            DATE(access_time) as date,
-            COUNT(*) as access_count
-        FROM honeytoken_access_logs
-        WHERE access_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-        GROUP BY DATE(access_time)
-        ORDER BY date
-        """
-        cursor.execute(daily_query)
-        daily_stats = cursor.fetchall()
-        
-        # Convert date objects to string
-        for stat in daily_stats:
-            stat['date'] = stat['date'].isoformat()
-        
-        return jsonify({
-            'token_stats': token_stats,
-            'daily_stats': daily_stats
-        })
+        alerts = cursor.fetchall()
+        return jsonify(alerts)
     finally:
         cursor.close()
         conn.close()
 
 @app.route('/api/alerts/check', methods=['POST'])
 def check_alerts():
-    """Check for alert conditions and return triggered alerts."""
+    """Check for new alerts and trigger notifications."""
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
     try:
-        # Get active tokens with recent access
+        # Get active alerts that have exceeded their threshold
         query = """
         SELECT 
-            h.id as token_id,
+            a.id as alert_id,
             h.token_type,
+            h.description,
             COUNT(l.id) as access_count,
-            ac.alert_threshold,
-            ac.alert_channels
-        FROM honeytokens h
-        JOIN alert_configs ac ON h.id = ac.token_id
+            a.alert_threshold,
+            a.alert_channels
+        FROM alert_configs a
+        JOIN honeytokens h ON a.token_id = h.id
         JOIN honeytoken_access_logs l ON h.id = l.token_id
-        WHERE h.is_active = 1
-        AND l.access_time >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-        GROUP BY h.id
-        HAVING COUNT(l.id) >= ac.alert_threshold
+        WHERE a.is_active = 1
+        AND l.access_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        GROUP BY a.id, h.token_type, h.description, a.alert_threshold, a.alert_channels
+        HAVING COUNT(l.id) >= a.alert_threshold
         """
         cursor.execute(query)
         alerts = cursor.fetchall()
         
+        # Insert alerts into history
+        if alerts:
+            for alert in alerts:
+                insert_query = """
+                INSERT INTO alert_history (
+                    alert_config_id, 
+                    trigger_time,
+                    access_count,
+                    notification_sent
+                ) VALUES (%s, NOW(), %s, 1)
+                """
+                cursor.execute(insert_query, (alert['alert_id'], alert['access_count']))
+            conn.commit()
+        
         return jsonify({
-            'alerts': alerts,
-            'timestamp': datetime.utcnow().isoformat()
+            'alerts_triggered': len(alerts),
+            'alerts': alerts
         })
     finally:
         cursor.close()
         conn.close()
+
+@app.route('/api/alerts/history', methods=['GET'])
+@requires_auth
+def get_alert_history():
+    try:
+        # Query Elasticsearch for alerts
+        result = es.search(
+            index="honeytoken-alerts-*",
+            body={
+                "sort": [{"timestamp": {"order": "desc"}}],
+                "size": 100
+            }
+        )
+        return jsonify([hit['_source'] for hit in result['hits']['hits']])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/employee-portal')
+def employee_portal():
+    """Render the employee portal page."""
+    return render_template('employee_portal.html')
+
+@app.route('/api/employee/<emp_id>', methods=['GET'])
+def get_employee_details(emp_id):
+    log_data = {
+        'access_time': datetime.utcnow().isoformat(),
+        'access_type': 'read',
+        'ip_address': request.remote_addr,
+        'user_id': request.authorization.username if request.authorization else 'unknown',
+        'user_agent': request.headers.get('User-Agent'),
+        'resource_type': 'employee',
+        'resource_id': emp_id,
+        'query_text': f'Attempted to access employee ID: {emp_id}'
+    }
+    log_to_elk('honeytoken_access', log_data)
+    return jsonify({"error": "Access denied"}), 401
+
+@app.route('/api/payroll/access', methods=['POST'])
+def access_payroll():
+    """Endpoint for accessing payroll data (honeytoken)."""
+    user_id = request.authorization.username if request.authorization else 'unknown'
+    ip = request.remote_addr
+    user_agent = request.headers.get('User-Agent')
+    
+    # This is a honeytoken - log the access
+    log_access_attempt(
+        token_id=2,  # ID of the payroll data honeytoken
+        user_id=user_id,
+        ip_address=ip,
+        access_type='read',
+        user_agent=user_agent,
+        query_text="Attempted to access payroll data"
+    )
+    
+    return jsonify({'error': 'Access denied'}), 401
+
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    """Endpoint for admin login attempts (honeytoken)."""
+    data = request.get_json()
+    user_id = data.get('username', 'unknown')
+    ip = request.remote_addr
+    user_agent = request.headers.get('User-Agent')
+    
+    # This is a honeytoken - log the access
+    log_access_attempt(
+        token_id=3,  # ID of the admin credentials honeytoken
+        user_id=user_id,
+        ip_address=ip,
+        access_type='execute',
+        user_agent=user_agent,
+        query_text=f"Admin login attempt with username: {user_id}"
+    )
+    
+    return jsonify({'error': 'Invalid credentials'}), 401
+
+@app.route('/api/system/db-credentials')
+def get_db_credentials():
+    """Endpoint for accessing database credentials (honeytoken)."""
+    user_id = request.authorization.username if request.authorization else 'unknown'
+    ip = request.remote_addr
+    user_agent = request.headers.get('User-Agent')
+    
+    # This is a honeytoken - log the access
+    log_access_attempt(
+        token_id=4,  # ID of the system config honeytoken
+        user_id=user_id,
+        ip_address=ip,
+        access_type='read',
+        user_agent=user_agent,
+        query_text="Attempted to access database credentials"
+    )
+    
+    return jsonify({'error': 'Access denied'}), 401
+
+# Add Kibana dashboard configuration endpoint
+@app.route('/api/kibana/config', methods=['GET'])
+@requires_auth
+def get_kibana_config():
+    return jsonify({
+        "dashboards": [
+            {
+                "title": "Honeytoken Access Overview",
+                "url": "http://localhost:5601/app/dashboards#/view/honeytoken-access-overview"
+            },
+            {
+                "title": "Alert Analysis",
+                "url": "http://localhost:5601/app/dashboards#/view/honeytoken-alert-analysis"
+            },
+            {
+                "title": "User Behavior Analytics",
+                "url": "http://localhost:5601/app/dashboards#/view/user-behavior-analytics"
+            }
+        ]
+    })
 
 if __name__ == '__main__':
     # Only enable debug mode in development
@@ -240,7 +427,7 @@ if __name__ == '__main__':
         Talisman(app, force_https=True)
     
     app.run(
-        host='127.0.0.1',  # Only listen on localhost
-        port=int(os.getenv('PORT', 5000)),
+        host='0.0.0.0',  # Listen on all interfaces
+        port=5000,
         debug=debug
     ) 

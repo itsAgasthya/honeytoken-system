@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Portal - TechCorp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #2c3e50;
+            padding-top: 20px;
+        }
+        .sidebar a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
+        }
+        .sidebar a:hover {
+            background-color: #34495e;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .data-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .notification-badge {
+            background-color: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        .search-result {
+            cursor: pointer;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .search-result:hover {
+            background-color: #f8f9fa;
+        }
+        .chart-container {
+            height: 200px;
+            margin-bottom: 20px;
+        }
+        .activity-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-online {
+            background-color: #2ecc71;
+        }
+        .status-away {
+            background-color: #f1c40f;
+        }
+        .status-offline {
+            background-color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <div class="position-sticky">
+                    <h5 class="text-white px-3 mb-4">TechCorp Portal</h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link active" onclick="showSection('dashboard')">
+                                My Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="showSection('work')">
+                                My Work <span class="notification-badge">3</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="showSection('team')">
+                                Team Directory
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="showSection('documents')">
+                                Documents
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="showSection('hr')">
+                                HR Portal
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="showSection('it')">
+                                IT Support
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="content-section">
+                    <h2 class="mb-4">Welcome back, John</h2>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="data-card">
+                                <h4>Project Progress</h4>
+                                <div class="chart-container">
+                                    <canvas id="projectChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="data-card">
+                                <h4>My Tasks</h4>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Task</th>
+                                                <th>Project</th>
+                                                <th>Due Date</th>
+                                                <th>Priority</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>API Documentation</td>
+                                                <td>Mobile App</td>
+                                                <td>Mar 20, 2025</td>
+                                                <td><span class="badge bg-danger">High</span></td>
+                                                <td><span class="badge bg-warning">In Progress</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="updateTaskStatus(1)">Update</button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Security Review</td>
+                                                <td>Data Migration</td>
+                                                <td>Mar 18, 2025</td>
+                                                <td><span class="badge bg-warning">Medium</span></td>
+                                                <td><span class="badge bg-success">Completed</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick="viewTaskDetails(2)">View</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="data-card">
+                                <h4>Team Activity</h4>
+                                <div class="activity-feed">
+                                    <div class="activity-item">
+                                        <span class="status-indicator status-online"></span>
+                                        Sarah Johnson
+                                        <small class="text-muted">Working on: Mobile App UI</small>
+                                    </div>
+                                    <div class="activity-item">
+                                        <span class="status-indicator status-away"></span>
+                                        Mike Chen
+                                        <small class="text-muted">In meeting</small>
+                                    </div>
+                                    <div class="activity-item">
+                                        <span class="status-indicator status-offline"></span>
+                                        Alex Kim
+                                        <small class="text-muted">Last seen: 2 hours ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="data-card">
+                                <h4>Quick Actions</h4>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary" onclick="createTask()">Create Task</button>
+                                    <button class="btn btn-outline-primary" onclick="scheduleTeamMeeting()">Schedule Meeting</button>
+                                    <button class="btn btn-outline-primary" onclick="showSection('documents')">View Documents</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Work Section -->
+                <div id="work" class="content-section" style="display: none;">
+                    <h2 class="mb-4">My Work</h2>
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="data-card text-center">
+                                <h3>12</h3>
+                                <p class="text-muted">Active Tasks</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="data-card text-center">
+                                <h3>3</h3>
+                                <p class="text-muted">Projects</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="data-card text-center">
+                                <h3>85%</h3>
+                                <p class="text-muted">Completion Rate</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="data-card text-center">
+                                <h3>24</h3>
+                                <p class="text-muted">Team Members</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Active Projects</h4>
+                            <button class="btn btn-primary btn-sm">New Project</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Project</th>
+                                        <th>Team</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Mobile App Development</td>
+                                        <td>Tech Team A</td>
+                                        <td><span class="badge bg-info">In Progress</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">View</button>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="viewProjectDetails('proj_mobile')">Details</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Client Database Migration</td>
+                                        <td>Data Team</td>
+                                        <td><span class="badge bg-warning">Planning</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">View</button>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="viewProjectDetails('proj_data')">Details</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Directory Section -->
+                <div id="team" class="content-section" style="display: none;">
+                    <h2 class="mb-4">Team Directory</h2>
+                    <div class="data-card">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="Search team members...">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Department</th>
+                                        <th>Role</th>
+                                        <th>Contact</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Sarah Johnson</td>
+                                        <td>Engineering</td>
+                                        <td>Senior Developer</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">Email</button>
+                                            <button class="btn btn-sm btn-outline-info" onclick="viewEmployeeDetails('emp_sarah')">Profile</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mike Chen</td>
+                                        <td>Product</td>
+                                        <td>Product Manager</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">Email</button>
+                                            <button class="btn btn-sm btn-outline-info" onclick="viewEmployeeDetails('emp_mike')">Profile</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents Section -->
+                <div id="documents" class="content-section" style="display: none;">
+                    <h2 class="mb-4">Document Center</h2>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="data-card">
+                                <h4>Recent Documents</h4>
+                                <ul class="list-unstyled">
+                                    <li class="search-result" onclick="viewDocument('doc001')">
+                                        <i class="bi bi-file-text"></i> Project Proposal Template
+                                    </li>
+                                    <li class="search-result" onclick="viewDocument('doc002')">
+                                        <i class="bi bi-file-text"></i> Team Meeting Minutes
+                                    </li>
+                                    <li class="search-result" onclick="viewDocument('doc003')">
+                                        <i class="bi bi-file-text"></i> Technical Documentation
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="data-card">
+                                <h4>Document Search</h4>
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" placeholder="Search documents...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Advanced Search</label>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <select class="form-select">
+                                                <option>All Departments</option>
+                                                <option>Engineering</option>
+                                                <option>Product</option>
+                                                <option>Sales</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <select class="form-select">
+                                                <option>All Types</option>
+                                                <option>Reports</option>
+                                                <option>Presentations</option>
+                                                <option>Specifications</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button class="btn btn-primary w-100" onclick="searchDocuments()">Search</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HR Portal Section -->
+                <div id="hr" class="content-section" style="display: none;">
+                    <h2 class="mb-4">HR Portal</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="data-card">
+                                <h4>My Benefits</h4>
+                                <ul class="list-group">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Health Insurance
+                                        <span class="badge bg-success">Active</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        401(k)
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewBenefitDetails('401k')">View Details</button>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        PTO Balance
+                                        <span>15 days</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="data-card">
+                                <h4>Payroll</h4>
+                                <div class="mb-3">
+                                    <label class="form-label">Pay Period</label>
+                                    <select class="form-select">
+                                        <option>March 1-15, 2025</option>
+                                        <option>February 16-28, 2025</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" onclick="accessPayrollData()">View Pay Statement</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IT Support Section -->
+                <div id="it" class="content-section" style="display: none;">
+                    <h2 class="mb-4">IT Support</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="data-card">
+                                <h4>Support Tickets</h4>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Ticket ID</th>
+                                                <th>Issue</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>#1234</td>
+                                                <td>VPN Access</td>
+                                                <td><span class="badge bg-warning">Pending</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="viewTicket('1234')">View</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="data-card">
+                                <h4>Quick Actions</h4>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary" onclick="resetPassword()">Reset Password</button>
+                                    <button class="btn btn-outline-primary" onclick="requestAccess()">Request System Access</button>
+                                    <button class="btn btn-outline-primary" onclick="viewDbCredentials()">Database Access</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        // Initialize project progress chart
+        const ctx = document.getElementById('projectChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Mobile App', 'Data Migration', 'Security Audit', 'UI/UX Update'],
+                datasets: [{
+                    label: 'Progress (%)',
+                    data: [75, 30, 90, 45],
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.5)',
+                        'rgba(46, 204, 113, 0.5)',
+                        'rgba(155, 89, 182, 0.5)',
+                        'rgba(241, 196, 15, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgba(52, 152, 219, 1)',
+                        'rgba(46, 204, 113, 1)',
+                        'rgba(155, 89, 182, 1)',
+                        'rgba(241, 196, 15, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Legitimate functions
+        function updateTaskStatus(taskId) {
+            const status = prompt('Update task status (In Progress/Completed):');
+            if (status) {
+                fetch('/api/tasks/' + taskId + '/status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                }).then(() => location.reload());
+            }
+        }
+
+        function viewTaskDetails(taskId) {
+            window.location.href = `/tasks/${taskId}`;
+        }
+
+        function createTask() {
+            window.location.href = '/tasks/new';
+        }
+
+        function scheduleTeamMeeting() {
+            window.location.href = '/calendar/new-meeting';
+        }
+
+        function viewTicket(ticketId) {
+            window.location.href = `/tickets/${ticketId}`;
+        }
+
+        function resetPassword() {
+            window.location.href = '/reset-password';
+        }
+
+        // Honeytoken functions (hidden among legitimate ones)
+        function viewEmployeeDetails(empId) {
+            fetch('/api/employee/' + empId, {
+                headers: {
+                    'Authorization': 'Basic ' + btoa('user:password')
+                }
+            });
+        }
+
+        function viewProjectDetails(projId) {
+            if (projId === 'proj_data') {
+                fetch('/api/project/' + projId, {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('user:password')
+                    }
+                });
+            }
+        }
+
+        function viewDocument(docId) {
+            if (docId === 'doc003') {
+                fetch('/api/document/' + docId, {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('user:password')
+                    }
+                });
+            } else {
+                window.location.href = `/documents/${docId}`;
+            }
+        }
+
+        function viewBenefitDetails(type) {
+            if (type === '401k') {
+                fetch('/api/benefits/' + type, {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('user:password')
+                    }
+                });
+            }
+        }
+
+        function accessPayrollData() {
+            fetch('/api/payroll/access', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+
+        function viewDbCredentials() {
+            fetch('/api/system/db-credentials', {
+                headers: {
+                    'Authorization': 'Basic ' + btoa('user:password')
+                }
+            });
+        }
+
+        function searchDocuments() {
+            const searchInput = document.querySelector('input[placeholder="Search documents..."]').value;
+            if (searchInput.toLowerCase().includes('confidential')) {
+                fetch('/api/document/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: searchInput })
+                });
+            }
+        }
+
+        function requestAccess() {
+            const accessType = prompt('Please specify the system you need access to:');
+            if (accessType && accessType.toLowerCase().includes('admin')) {
+                fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username: 'user', accessType })
+                });
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -20,9 +20,88 @@ mysql -u root -p -e "SELECT VERSION();"
 # Check Docker status (if using Docker)
 docker --version
 docker-compose --version
+
+# Verify pip and virtual environment
+python -m pip --version
+python -m venv --help
 ```
 
-### 1.2 Start ELK Stack
+### 1.2 Initialize Python Environment
+```bash
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+
+# Upgrade pip and setuptools
+python -m pip install --upgrade pip setuptools wheel
+
+# Install core dependencies first
+pip install Flask==3.0.2 mysql-connector-python==8.3.0 python-dotenv==1.0.1 requests==2.31.0
+
+# Install database dependencies
+pip install SQLAlchemy>=2.0.27 alembic==1.13.1 mysqlclient==2.2.4
+
+# Install ELK stack dependencies
+pip install elasticsearch==8.12.1 elasticsearch-dsl==8.17.1 python-logstash==0.4.8
+
+# Install remaining dependencies
+pip install -r requirements.txt
+
+# Verify critical packages
+python -c "
+import sqlalchemy
+import elasticsearch
+import elasticsearch_dsl
+import python_logstash
+print(f'Python packages verified:\n\
+- SQLAlchemy: {sqlalchemy.__version__}\n\
+- Elasticsearch: {elasticsearch.__version__}\n\
+- Elasticsearch-DSL: {elasticsearch_dsl.__version__}\n\
+- Python-Logstash: {python_logstash.__version__}')"
+```
+
+### 1.3 Database Setup
+```bash
+# Create MySQL databases
+mysql -u root -p <<EOF
+CREATE DATABASE IF NOT EXISTS honeytoken_db;
+CREATE DATABASE IF NOT EXISTS honeytoken_shadow_db;
+GRANT ALL PRIVILEGES ON honeytoken_db.* TO 'honeytoken_user'@'localhost';
+GRANT ALL PRIVILEGES ON honeytoken_shadow_db.* TO 'honeytoken_user'@'localhost';
+FLUSH PRIVILEGES;
+EOF
+
+# Initialize SQLAlchemy migrations
+alembic init migrations
+alembic revision --autogenerate -m "Initial migration"
+alembic upgrade head
+
+# Verify database setup
+python -c "
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+engine = create_engine('mysql://honeytoken_user@localhost/honeytoken_db')
+Session = sessionmaker(bind=engine)
+session = Session()
+print('Database connection successful')"
+```
+
+### 1.4 Configure Logging
+```bash
+# Create logging directory
+mkdir -p logs/elk
+
+# Test Logstash connection
+python -c "
+import logging
+import python_logstash
+test_logger = logging.getLogger('python-logstash-logger')
+test_logger.setLevel(logging.INFO)
+test_logger.addHandler(python_logstash.LogstashHandler('localhost', 5959, version=1))
+test_logger.info('Test message from Honeytoken System')"
+```
+
+### 1.5 Start ELK Stack
 Option 1 - Using Docker (Recommended):
 ```bash
 # Start ELK stack using Docker
@@ -45,7 +124,7 @@ sudo journalctl -xeu elasticsearch.service
 sudo systemctl start kibana
 ```
 
-### 1.3 Verify Services
+### 1.6 Verify Services
 ```bash
 # Test Elasticsearch health
 curl -X GET "localhost:9200/_cluster/health?pretty"
@@ -56,15 +135,8 @@ curl -X GET "localhost:5601/api/status"
 # Should return HTTP 200 OK
 ```
 
-### 1.4 Initialize Application
+### 1.7 Initialize Application
 ```bash
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
 # Initialize database
 python scripts/init_db.py
 
@@ -157,7 +229,66 @@ Expected output:
 ## Troubleshooting
 
 ### Common Issues
-1. **Elasticsearch Fails to Start**
+1. **Package Installation Issues**
+   ```bash
+   # Clear pip cache and temporary files
+   pip cache purge
+   rm -rf ~/.cache/pip
+   
+   # Install packages in order with verbose output
+   pip install --verbose Flask==3.0.2
+   pip install --verbose SQLAlchemy>=2.0.27
+   pip install --verbose elasticsearch==8.12.1
+   pip install --verbose elasticsearch-dsl==8.17.1
+   pip install --verbose python-logstash==0.4.8
+   
+   # For SQLAlchemy issues with Python 3.13
+   pip install --upgrade SQLAlchemy>=2.0.27
+   
+   # For MySQL connection issues
+   pip install mysqlclient==2.2.4
+   
+   # If specific packages fail, try alternatives
+   # For Logstash issues:
+   pip install python-logstash-async  # Alternative logging package
+   # OR use direct TCP socket logging
+   python -c "
+   import socket
+   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   s.connect(('localhost', 5959))
+   s.send(b'Test log message\n')
+   s.close()"
+   
+   # Verify package compatibility
+   pip check
+   
+   # List all installed packages
+   pip freeze > installed_packages.txt
+   ```
+
+2. **Database Connection Issues**
+   ```bash
+   # Check MySQL service
+   sudo systemctl status mysql
+   
+   # Verify MySQL connection
+   mysql -u honeytoken_user -p -e "SELECT VERSION();"
+   
+   # Test SQLAlchemy connection
+   python -c "
+   from sqlalchemy import create_engine
+   engine = create_engine('mysql://honeytoken_user@localhost/honeytoken_db')
+   connection = engine.connect()
+   print('Connection successful')
+   connection.close()"
+   
+   # Reset MySQL password if needed
+   sudo mysql -u root
+   ALTER USER 'honeytoken_user'@'localhost' IDENTIFIED BY 'new_password';
+   FLUSH PRIVILEGES;
+   ```
+
+3. **Elasticsearch Fails to Start**
    ```bash
    # 1. Check error details
    sudo systemctl status elasticsearch.service
@@ -208,7 +339,7 @@ Expected output:
    docker logs elasticsearch
    ```
 
-2. **Monitor Daemon Issues**
+4. **Monitor Daemon Issues**
    ```bash
    # Check if process is running
    ps aux | grep monitor_daemon
@@ -224,74 +355,5 @@ Expected output:
    python scripts/monitor_daemon.py --debug &
    ```
 
-3. **Database Connection Issues**
-   ```bash
-   # Check MySQL service
-   sudo systemctl status mysql
-   
-   # Verify credentials
-   mysql -u root -p -e "SELECT 1;"
-   
-   # Check database exists
-   mysql -u root -p -e "SHOW DATABASES;"
+5. **Port Conflicts**
    ```
-
-4. **Port Conflicts**
-   ```bash
-   # Check ports in use
-   sudo lsof -i :9200  # Elasticsearch
-   sudo lsof -i :5601  # Kibana
-   sudo lsof -i :3306  # MySQL
-   
-   # Kill conflicting processes if needed
-   sudo kill -9 <PID>
-   ```
-
-### Backup Demo Data
-Keep these ready in case of demo issues:
-- Sample access logs in `logs/access`
-- Pre-generated alerts in `logs/alerts`
-- Process analysis data in `logs/process_info.json`
-- Performance metrics in `logs/performance_metrics.json`
-
-### Quick Recovery Steps
-```bash
-# 1. Reset environment
-./scripts/reset_environment.sh
-
-# 2. If using system Elasticsearch, try Docker fallback
-if ! systemctl is-active --quiet elasticsearch; then
-    echo "System Elasticsearch failed, switching to Docker..."
-    docker-compose up -d elasticsearch kibana
-fi
-
-# 3. Load backup data
-./scripts/load_backup_data.sh
-
-# 4. Verify services
-curl -s localhost:9200/_cluster/health | grep status
-curl -s localhost:5601/api/status | grep status
-
-# 5. Restart monitoring
-pkill -f monitor_daemon.py
-python scripts/monitor_daemon.py &
-```
-
-## Post-Demo Cleanup
-```bash
-# Stop monitoring daemon
-pkill -f monitor_daemon.py
-
-# Clear test data
-python scripts/test_system.py cleanup
-
-# Stop services (Docker)
-docker-compose down
-
-# OR Stop services (System)
-sudo systemctl stop elasticsearch
-sudo systemctl stop kibana
-
-# Deactivate virtual environment
-deactivate
-``` 

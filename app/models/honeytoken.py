@@ -23,7 +23,7 @@ class Honeytoken(BaseModel):
     token_value = Column(Text, nullable=False)
     description = Column(String(255))
     is_active = Column(Integer, default=1)
-    metadata = Column(JSON)
+    token_metadata = Column(JSON)
     
     # Relationships
     access_logs = relationship("HoneytokenAccess", back_populates="honeytoken")
