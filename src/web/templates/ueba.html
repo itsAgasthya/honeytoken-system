@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UEBA Analytics - Honeytoken UEBA System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Honeytoken UEBA</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="/dashboard"><i class="icon-dashboard"></i> Dashboard</a></li>
+                    <li><a href="/honeytokens"><i class="icon-honeytoken"></i> Honeytokens</a></li>
+                    <li><a href="/alerts"><i class="icon-alert"></i> Alerts</a></li>
+                    <li><a href="/users"><i class="icon-users"></i> Users</a></li>
+                    <li class="active"><a href="/ueba"><i class="icon-analytics"></i> UEBA</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h1>User Entity Behavior Analytics</h1>
+                <div class="header-actions">
+                    <div class="time-range-selector">
+                        <label for="time-range">Time Range:</label>
+                        <select id="time-range">
+                            <option value="24">Last 24 Hours</option>
+                            <option value="48">Last 48 Hours</option>
+                            <option value="168" selected>Last 7 Days</option>
+                            <option value="720">Last 30 Days</option>
+                        </select>
+                    </div>
+                    <button id="refresh-btn" class="btn"><i class="icon-refresh"></i> Refresh</button>
+                </div>
+            </div>
+
+            <div id="alert-container"></div>
+
+            <!-- UEBA Overview Cards -->
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Anomaly Overview</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-grid">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Activities</span>
+                                <span id="total-activities" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Anomalous Activities</span>
+                                <span id="anomalous-activities" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Anomaly Rate</span>
+                                <span id="anomaly-rate" class="stat-value">0%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Avg. Anomaly Score</span>
+                                <span id="avg-anomaly-score" class="stat-value">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risky Users and Anomaly Charts -->
+            <div class="card-container card-grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Risky Users</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="risky-users" class="risky-users-list">
+                            <div class="loading">Loading risky users...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Anomaly Distribution</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="anomaly-chart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Timeline and Features -->
+            <div class="card-container card-grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Activity Timeline</h3>
+                        <div class="card-actions">
+                            <select id="user-selector">
+                                <option value="all">All Users</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="activity-timeline" width="400" height="300"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Anomaly Features</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="feature-chart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Activity Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Recent Activities</h3>
+                    <div class="card-actions">
+                        <div class="search-box">
+                            <input type="text" id="activity-search" placeholder="Search activities...">
+                            <button class="btn btn-search"><i class="icon-search"></i></button>
+                        </div>
+                        <button id="export-activities" class="btn"><i class="icon-download"></i> Export</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="activities-table-container">
+                        <table id="activities-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Activity Type</th>
+                                    <th>Resource</th>
+                                    <th>IP Address</th>
+                                    <th>Time</th>
+                                    <th>Anomaly Score</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activities-tbody">
+                                <tr class="loading-row">
+                                    <td colspan="7">Loading activities...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Details Modal -->
+    <div id="activity-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Activity Details</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="activity-details-content"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn modal-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/ueba.js"></script>
+</body>
+</html> 

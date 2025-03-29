@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users - Honeytoken UEBA System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Honeytoken UEBA</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="/dashboard"><i class="icon-dashboard"></i> Dashboard</a></li>
+                    <li><a href="/honeytokens"><i class="icon-honeytoken"></i> Honeytokens</a></li>
+                    <li><a href="/alerts"><i class="icon-alert"></i> Alerts</a></li>
+                    <li class="active"><a href="/users"><i class="icon-users"></i> Users</a></li>
+                    <li><a href="/ueba"><i class="icon-analytics"></i> UEBA</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h1>User Management</h1>
+                <div class="header-actions">
+                    <button id="refresh-users-btn" class="btn"><i class="icon-refresh"></i> Refresh</button>
+                </div>
+            </div>
+
+            <div id="alert-container"></div>
+
+            <!-- Users Overview -->
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Users Overview</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-grid">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Users</span>
+                                <span id="total-users" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Active Users</span>
+                                <span id="active-users" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Admin Users</span>
+                                <span id="admin-users" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Users with Alerts</span>
+                                <span id="risky-users" class="stat-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users List -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Users</h3>
+                    <div class="card-actions">
+                        <div class="search-box">
+                            <input type="text" id="user-search" placeholder="Search users...">
+                            <button class="btn btn-search"><i class="icon-search"></i></button>
+                        </div>
+                        <select id="user-filter">
+                            <option value="all">All Users</option>
+                            <option value="admin">Admins</option>
+                            <option value="regular">Regular Users</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="users-table-container">
+                        <table id="users-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Department</th>
+                                    <th>Role</th>
+                                    <th>Last Activity</th>
+                                    <th>Risk Score</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-tbody">
+                                <tr class="loading-row">
+                                    <td colspan="7">Loading users...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Details Modal -->
+    <div id="user-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>User Details</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="user-details-content"></div>
+                
+                <div class="user-risk-section">
+                    <h3>Risk Assessment</h3>
+                    <div class="risk-meter-container">
+                        <div class="risk-meter">
+                            <div id="risk-meter-fill" class="risk-meter-fill"></div>
+                        </div>
+                        <div id="risk-score-label" class="risk-score-label">Risk Score: 0.0</div>
+                    </div>
+                    <div id="risk-factors" class="risk-factors">
+                        <h4>Risk Factors</h4>
+                        <ul id="risk-factors-list"></ul>
+                    </div>
+                </div>
+                
+                <div class="user-activity-section">
+                    <h3>Recent Activities</h3>
+                    <div id="user-activities-container">
+                        <div class="loading">Loading user activities...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-view-ueba" id="view-ueba-btn">View in UEBA</button>
+                <button class="btn modal-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/users.js"></script>
+</body>
+</html> 

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Honeytoken UEBA System</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar Navigation -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading text-center text-white">
+                        <i class="fas fa-shield-alt"></i> Honeytoken UEBA
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/dashboard">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/honeytokens">
+                                <i class="fas fa-key"></i> Honeytokens
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/alerts">
+                                <i class="fas fa-bell"></i> Alerts
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/users">
+                                <i class="fas fa-users"></i> Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/ueba">
+                                <i class="fas fa-chart-line"></i> UEBA Analysis
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/settings">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2"><i class="fas fa-cog"></i> System Settings</h1>
+                </div>
+
+                <!-- Settings Tabs -->
+                <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">General</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="honeytoken-tab" data-bs-toggle="tab" data-bs-target="#honeytoken" type="button" role="tab" aria-controls="honeytoken" aria-selected="false">Honeytoken</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" data-bs-target="#alerts" type="button" role="tab" aria-controls="alerts" aria-selected="false">Alerts</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="ueba-tab" data-bs-toggle="tab" data-bs-target="#ueba" type="button" role="tab" aria-controls="ueba" aria-selected="false">UEBA</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">Users</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="backup-tab" data-bs-toggle="tab" data-bs-target="#backup" type="button" role="tab" aria-controls="backup" aria-selected="false">Backup</button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="settingsTabContent">
+                    <!-- General Settings -->
+                    <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>General Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="generalSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="systemName" class="form-label">System Name</label>
+                                        <input type="text" class="form-control" id="systemName" value="Honeytoken UEBA System">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="apiKey" class="form-label">API Key</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="apiKey" value="honeytoken_api_key_123" readonly>
+                                            <button class="btn btn-outline-secondary" type="button" id="regenerateApiKey">Regenerate</button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="loggingLevel" class="form-label">Logging Level</label>
+                                        <select class="form-select" id="loggingLevel">
+                                            <option value="debug">Debug</option>
+                                            <option value="info" selected>Info</option>
+                                            <option value="warning">Warning</option>
+                                            <option value="error">Error</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="enableDebug" checked>
+                                        <label class="form-check-label" for="enableDebug">Enable Debug Mode</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Honeytoken Settings -->
+                    <div class="tab-pane fade" id="honeytoken" role="tabpanel" aria-labelledby="honeytoken-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Honeytoken Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="honeytokenSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="honeytokenPath" class="form-label">Honeytoken Storage Path</label>
+                                        <input type="text" class="form-control" id="honeytokenPath" value="/var/lib/honeytokens">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="defaultSensitivity" class="form-label">Default Sensitivity</label>
+                                        <select class="form-select" id="defaultSensitivity">
+                                            <option value="low">Low</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="autoRegenerate" checked>
+                                        <label class="form-check-label" for="autoRegenerate">Auto-regenerate compromised honeytokens</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts Settings -->
+                    <div class="tab-pane fade" id="alerts" role="tabpanel" aria-labelledby="alerts-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Alert Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="alertSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="alertRetention" class="form-label">Alert Retention (days)</label>
+                                        <input type="number" class="form-control" id="alertRetention" value="90">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Notification Methods</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="emailNotification" checked>
+                                            <label class="form-check-label" for="emailNotification">Email</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="smsNotification">
+                                            <label class="form-check-label" for="smsNotification">SMS</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="slackNotification" checked>
+                                            <label class="form-check-label" for="slackNotification">Slack</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="emailRecipients" class="form-label">Email Recipients</label>
+                                        <input type="text" class="form-control" id="emailRecipients" value="security@example.com">
+                                        <div class="form-text">Separate multiple emails with commas</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- UEBA Settings -->
+                    <div class="tab-pane fade" id="ueba" role="tabpanel" aria-labelledby="ueba-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>UEBA Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="uebaSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="anomalyThreshold" class="form-label">Anomaly Score Threshold</label>
+                                        <input type="range" class="form-range" min="0" max="1" step="0.05" id="anomalyThreshold" value="0.7">
+                                        <div class="d-flex justify-content-between">
+                                            <span>0.0</span>
+                                            <span id="anomalyThresholdValue">0.7</span>
+                                            <span>1.0</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="baselinePeriod" class="form-label">Baseline Period (days)</label>
+                                        <input type="number" class="form-control" id="baselinePeriod" value="30">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="modelUpdateFrequency" class="form-label">Model Update Frequency</label>
+                                        <select class="form-select" id="modelUpdateFrequency">
+                                            <option value="hourly">Hourly</option>
+                                            <option value="daily" selected>Daily</option>
+                                            <option value="weekly">Weekly</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Settings -->
+                    <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>User Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="userSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="userDataSource" class="form-label">User Data Source</label>
+                                        <select class="form-select" id="userDataSource">
+                                            <option value="internal" selected>Internal Database</option>
+                                            <option value="ldap">LDAP/Active Directory</option>
+                                            <option value="oauth">OAuth Provider</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="monitorAllUsers" checked>
+                                        <label class="form-check-label" for="monitorAllUsers">Monitor All Users</label>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="highRiskThreshold" class="form-label">High Risk Threshold</label>
+                                        <input type="number" class="form-control" id="highRiskThreshold" value="75">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Backup Settings -->
+                    <div class="tab-pane fade" id="backup" role="tabpanel" aria-labelledby="backup-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Backup & Restore</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-4">
+                                    <h6>Database Backup</h6>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <button class="btn btn-primary" id="backupDatabase">
+                                            <i class="fas fa-download"></i> Backup Now
+                                        </button>
+                                        <button class="btn btn-outline-secondary" id="scheduleBackup">
+                                            <i class="fas fa-calendar"></i> Schedule Backup
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <h6>Configuration Backup</h6>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <button class="btn btn-primary" id="backupConfig">
+                                            <i class="fas fa-download"></i> Backup Configuration
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <h6>Restore</h6>
+                                    <div class="mb-3">
+                                        <label for="restoreFile" class="form-label">Select Backup File</label>
+                                        <input class="form-control" type="file" id="restoreFile">
+                                    </div>
+                                    <button class="btn btn-warning" id="restoreBackup">
+                                        <i class="fas fa-upload"></i> Restore
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/settings.js"></script>
+</body>
+</html> 

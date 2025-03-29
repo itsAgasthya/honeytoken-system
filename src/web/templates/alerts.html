@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honeytoken UEBA System - Alerts</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar Navigation -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <h5 class="sidebar-heading text-center text-white">
+                        <i class="fas fa-shield-alt"></i> Honeytoken UEBA
+                    </h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/dashboard">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/honeytokens">
+                                <i class="fas fa-key"></i> Honeytokens
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/alerts">
+                                <i class="fas fa-bell"></i> Alerts
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/users">
+                                <i class="fas fa-users"></i> Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/ueba">
+                                <i class="fas fa-chart-line"></i> UEBA Analysis
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/settings">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Alerts</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="exportAlerts">Export</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="resolveSelected">Resolve Selected</button>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="timeFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-calendar"></i> Last 24 Hours
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="timeFilterDropdown">
+                                <li><a class="dropdown-item time-filter" data-hours="24" href="#">Last 24 Hours</a></li>
+                                <li><a class="dropdown-item time-filter" data-hours="72" href="#">Last 3 Days</a></li>
+                                <li><a class="dropdown-item time-filter" data-hours="168" href="#">Last 7 Days</a></li>
+                                <li><a class="dropdown-item time-filter" data-hours="720" href="#">Last 30 Days</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Filters -->
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="alertSearch" placeholder="Search alerts...">
+                            <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-check-inline mt-2">
+                            <input class="form-check-input" type="checkbox" id="showResolved">
+                            <label class="form-check-label" for="showResolved">Include Resolved</label>
+                        </div>
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="severityFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Severity
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="severityFilterDropdown">
+                                <li><a class="dropdown-item severity-filter" data-severity="all" href="#">All</a></li>
+                                <li><a class="dropdown-item severity-filter" data-severity="critical" href="#">Critical</a></li>
+                                <li><a class="dropdown-item severity-filter" data-severity="high" href="#">High</a></li>
+                                <li><a class="dropdown-item severity-filter" data-severity="medium" href="#">Medium</a></li>
+                                <li><a class="dropdown-item severity-filter" data-severity="low" href="#">Low</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAll">
+                                </th>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Severity</th>
+                                <th>User</th>
+                                <th>Timestamp</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alertsTable">
+                            <!-- Alerts will be loaded here via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <nav aria-label="Alerts pagination">
+                    <ul class="pagination justify-content-center" id="alertsPagination">
+                        <!-- Pagination will be loaded here via JavaScript -->
+                    </ul>
+                </nav>
+            </main>
+        </div>
+    </div>
+
+    <!-- Alert Details Modal -->
+    <div class="modal fade" id="alertDetailsModal" tabindex="-1" aria-labelledby="alertDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="alertDetailsModalLabel">Alert Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="alertDetails">
+                        <!-- Alert details will be loaded here via JavaScript -->
+                    </div>
+                    <h6 class="mt-4">Forensic Evidence</h6>
+                    <div class="evidence-container">
+                        <pre id="alertEvidence">No evidence available</pre>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="resolveAlertBtn">Resolve</button>
+                    <button type="button" class="btn btn-primary" id="exportEvidenceBtn">Export Evidence</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resolve Alert Modal -->
+    <div class="modal fade" id="resolveModal" tabindex="-1" aria-labelledby="resolveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resolveModalLabel">Resolve Alert</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="resolveAlertId">
+                    <div class="mb-3">
+                        <label for="resolutionNotes" class="form-label">Resolution Notes</label>
+                        <textarea class="form-control" id="resolutionNotes" rows="3" placeholder="Enter resolution notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmResolveBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/alerts.js"></script>
+</body>
+</html>

@@ -1,0 +1,576 @@
+/* Main stylesheet for Honeytoken UEBA System */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+}
+
+/* App Container Layout */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Main Content Area */
+.main-content {
+    flex-grow: 1;
+    padding: 1.5rem;
+    margin-left: 250px; /* Width of sidebar */
+}
+
+/* Sidebar Layout */
+.sidebar {
+    width: 250px;
+    background-color: #343a40;
+    color: #fff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    padding-top: 1rem;
+}
+
+.sidebar-header {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.sidebar-nav {
+    padding: 1rem 0;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-nav li {
+    margin-bottom: 0.2rem;
+}
+
+.sidebar-nav li a {
+    display: block;
+    padding: 0.75rem 1.5rem;
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.sidebar-nav li a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.sidebar-nav li.active a {
+    background-color: #0d6efd;
+    color: #fff;
+    border-radius: 0;
+}
+
+/* Content Header */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.content-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #4e73df;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Card Layout */
+.card-container {
+    margin-bottom: 1.5rem;
+}
+
+.card-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    margin-bottom: 1.5rem;
+    transition: transform .3s, box-shadow .3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, .1);
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e3e6f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    border-top-left-radius: 0.35rem;
+    border-top-right-radius: 0.35rem;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2e59d9;
+}
+
+.card-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Stat Grid */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.stat-item {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 0.35rem;
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #2e59d9;
+}
+
+/* Table Styling */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background-color: #f8f9fa;
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 2px solid #e3e6f0;
+    font-weight: 600;
+    color: #4e73df;
+}
+
+.data-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.data-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Loading and Empty States */
+.loading-row td {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+/* Button Styling */
+.btn {
+    display: inline-block;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    text-align: center;
+    cursor: pointer;
+    background-color: #f8f9fa;
+    color: #212529;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn:hover {
+    background-color: #e2e6ea;
+}
+
+.btn-sm {
+    padding: .25rem .5rem;
+    font-size: .875rem;
+}
+
+/* Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 0;
+    border-radius: 0.35rem;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e3e6f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #4e73df;
+}
+
+.close-modal {
+    color: #aaa;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e3e6f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* User Risk Styling */
+.risk-meter-container {
+    margin: 1.5rem 0;
+}
+
+.risk-meter {
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+.risk-meter-fill {
+    height: 100%;
+    width: 0;
+    background-color: #28a745;
+    transition: width 0.3s ease;
+}
+
+.risk-level-low { background-color: #28a745; color: white; }
+.risk-level-medium { background-color: #ffc107; color: #212529; }
+.risk-level-high { background-color: #fd7e14; color: white; }
+.risk-level-critical { background-color: #dc3545; color: white; }
+
+/* UEBA Specific Styling */
+.risky-users-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.risky-user-card {
+    padding: 1rem;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.35rem;
+    background-color: #fff;
+}
+
+.risky-user-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.risky-user-name {
+    font-weight: 600;
+}
+
+.risky-user-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 1rem;
+}
+
+.risky-user-stat {
+    text-align: center;
+}
+
+/* Risk indicators in tables */
+.risk-critical {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.risk-high {
+    color: #fd7e14;
+    font-weight: bold;
+}
+
+.risk-medium {
+    color: #ffc107;
+}
+
+.risk-low {
+    color: #28a745;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .card-grid-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Sidebar styles */
+#sidebar {
+    min-height: 100vh;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+#sidebar .nav-link {
+    color: #c6c6c6;
+    padding: .5rem 1rem;
+    margin-bottom: .2rem;
+    border-radius: 4px;
+}
+
+#sidebar .nav-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, .1);
+}
+
+#sidebar .nav-link.active {
+    color: #fff;
+    background-color: #0d6efd;
+}
+
+#sidebar .nav-link i {
+    margin-right: .5rem;
+}
+
+.sidebar-heading {
+    font-size: 1.2rem;
+    padding: 1rem;
+}
+
+/* Card hover effects */
+.card {
+    transition: transform .3s, box-shadow .3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, .1);
+}
+
+/* Table styling */
+.table-responsive {
+    margin-bottom: 2rem;
+}
+
+.table th {
+    background-color: #f1f1f1;
+    border-top: none;
+}
+
+/* Alert badges */
+.badge {
+    font-weight: 500;
+    font-size: 0.85em;
+    padding: .35em .65em;
+}
+
+/* Chart containers */
+.card-header {
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    #sidebar {
+        min-height: auto;
+    }
+}
+
+/* Dashboard cards */
+.card-body h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Alert status indicators */
+.status-open {
+    color: #dc3545;
+}
+
+.status-resolved {
+    color: #28a745;
+}
+
+/* Honeytoken card styling */
+.honeytoken-card {
+    border-left: 4px solid #17a2b8;
+}
+
+.honeytoken-card.critical {
+    border-left-color: #dc3545;
+}
+
+.honeytoken-card.high {
+    border-left-color: #ffc107;
+}
+
+/* User risk level indicators */
+.risk-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.risk-low {
+    background-color: #28a745;
+}
+
+.risk-medium {
+    background-color: #ffc107;
+}
+
+.risk-high {
+    background-color: #fd7e14;
+}
+
+.risk-critical {
+    background-color: #dc3545;
+}
+
+/* Alert details page */
+.alert-detail-header {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.alert-detail-header h3 {
+    margin-bottom: 0;
+}
+
+.evidence-container {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+/* Toast notifications */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border .75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+} 
